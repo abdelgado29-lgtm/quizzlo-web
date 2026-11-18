@@ -15,4 +15,4 @@ Versión publicada: https://claude.ai/artifact/AgWEzh7ouWzSxKVuEeBCU9
 
 `index.html` funciona en cualquier hosting estático (GitHub Pages, Firebase Hosting, Netlify…), sin claude.ai.
 - Los datos (tarjeta de jugador, ranking, progreso) se guardan en el navegador de cada persona, así que el ranking no se comparte entre dispositivos.
-- Modo profesor: añade `?profesor=1` a la URL.
+- Al entrar se elige **Student** (jugar, ranking, progreso) o **Teacher** (añadir preguntas). Las preguntas de los profesores se guardan en su navegador y se pueden descargar con "Download questions".
