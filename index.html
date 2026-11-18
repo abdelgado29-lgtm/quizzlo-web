@@ -223,6 +223,37 @@ canvas#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-in
 <div class="toast" id="toast" hidden></div>
 
 <script>
+/* Standalone runtime: replaces the claude.ai artifact runtime with browser storage (data stays on this device). Teacher mode: add ?profesor=1 to the URL. */
+(function(){
+  const KEY="quizzlo-db",UKEY="quizzlo-uid";
+  let store={};try{store=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){}
+  const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(store))}catch(e){}};
+  let uid;try{uid=localStorage.getItem(UKEY)}catch(e){}
+  if(!uid){uid="u"+Math.random().toString(36).slice(2,10);try{localStorage.setItem(UKEY,uid)}catch(e){}}
+  const subs=new Set();
+  const emit=()=>subs.forEach(f=>f());
+  const docSnap=p=>({id:p.split("/").pop(),exists:p in store,data:()=>store[p]?JSON.parse(JSON.stringify(store[p])):undefined});
+  const docRef=p=>({id:p.split("/").pop(),
+    set:async d=>{store[p]=JSON.parse(JSON.stringify(d));save();emit()},
+    delete:async()=>{delete store[p];save();emit()},
+    onSnapshot(cb){const f=()=>cb(docSnap(p));subs.add(f);f();return()=>subs.delete(f)}});
+  const query=(name,ord,lim)=>({
+    orderBy:(field,dir)=>query(name,{field,dir},lim),
+    limit:n=>query(name,ord,n),
+    onSnapshot(cb){const f=()=>{
+      const depth=name.split("/").length+1;
+      let docs=Object.keys(store).filter(k=>k.startsWith(name+"/")&&k.split("/").length===depth).map(docSnap);
+      if(ord) docs.sort((a,b)=>{const x=a.data()[ord.field]||0,y=b.data()[ord.field]||0;return ord.dir==="desc"?y-x:x-y});
+      if(lim) docs=docs.slice(0,lim);
+      cb({docs})};subs.add(f);f();return()=>subs.delete(f)}});
+  const db={doc:docRef,collection:name=>Object.assign(query(name),{doc:id=>docRef(name+"/"+(id||Date.now().toString(36)+Math.random().toString(36).slice(2,6)))})};
+  const editor=/[?&]profesor=1\b/.test(location.search);
+  const user={me:async()=>({id:uid,name:"",avatarUrl:"",canEdit:editor})};
+  window.addEventListener("storage",e=>{if(e.key===KEY){try{store=JSON.parse(e.newValue||"{}")}catch(_){}emit()}});
+  window.claude={use:async n=>n==="db"?db:n==="user"?user:null};
+})();
+</script>
+<script>
 const LEVELS={
   pri:{name:"Primary",note:"Years 1–6"},
   eso:{name:"ESO",note:"Currículo español · desde Year 9"},
