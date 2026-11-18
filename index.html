@@ -1118,7 +1118,7 @@ function renderHeader(){
 }
 
 /* ---------- role ---------- */
-let role=null;try{role=localStorage.getItem("quizzlo-role")}catch(e){}
+let role=null; // asked again on every page load
 function applyRole(){
   const picking=!role, teacher=role==="teacher";
   if(teacher) isEditor=true;
@@ -1129,7 +1129,7 @@ function applyRole(){
   if(picking) $("#meChip").hidden=true;
 }
 function setRole(r){
-  role=r;try{r?localStorage.setItem("quizzlo-role",r):localStorage.removeItem("quizzlo-role")}catch(e){}
+  role=r;
   if(r!=="teacher") isEditor=false;
   if(game&&!game.done) stopTimer();
   game=null;
@@ -1152,7 +1152,6 @@ $("#pinForm").addEventListener("submit",async e=>{e.preventDefault();
   else{$("#pinIn").value="";toast("Wrong PIN")}
 });
 $("#roleBtn").addEventListener("click",()=>setRole(null));
-if(role==="teacher") tab="teachers";
 
 document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>{
   tab=b.dataset.tab;
