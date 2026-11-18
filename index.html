@@ -206,6 +206,8 @@ canvas#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-in
 .role .ic{font-size:52px;line-height:1}
 .role b{font-family:var(--f-display);font-weight:400;font-size:26px}
 .role span{font-size:14px;color:var(--muted)}
+.pinform{display:grid;gap:10px;justify-items:center;border-top:1.5px dashed var(--line);padding-top:18px}
+.pinform input{max-width:200px;text-align:center;font-family:var(--f-mono);font-size:22px;letter-spacing:.3em}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:999px;font-weight:700;max-width:calc(100% - 32px);text-align:center;z-index:7}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -226,6 +228,11 @@ canvas#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-in
       <button class="role" data-role="student"><span class="ic" aria-hidden="true">🎒</span><b>Student</b><span>Play quizzes, climb the leaderboard and track your progress.</span></button>
       <button class="role" data-role="teacher"><span class="ic" aria-hidden="true">🍎</span><b>Teacher</b><span>Add new questions to the game.</span></button>
     </div>
+    <form class="pinform" id="pinForm" hidden>
+      <label for="pinIn"><b>Teacher PIN</b></label>
+      <input type="password" id="pinIn" inputmode="numeric" autocomplete="off" maxlength="12" required>
+      <div class="actions"><button class="btn ghost" type="button" id="pinCancel">Cancel</button><button class="btn hl-btn" type="submit">Enter</button></div>
+    </form>
   </section>
   <nav class="tabs" role="tablist">
     <button role="tab" data-tab="play" aria-selected="true" id="tab-play">Play</button>
@@ -1130,7 +1137,20 @@ function setRole(r){
   document.querySelectorAll("nav.tabs button").forEach(x=>x.setAttribute("aria-selected",x.dataset.tab===t?"true":"false"));
   tab=t;render();window.scrollTo(0,0);
 }
-document.querySelectorAll("#rolePick [data-role]").forEach(b=>b.addEventListener("click",()=>setRole(b.dataset.role)));
+const PIN_HASH="0a3bb2f830961854bff1f694fac5942a1d9b2fa58711dd6ed223facc1d483ccd";
+async function pinOk(v){
+  try{const h=await crypto.subtle.digest("SHA-256",new TextEncoder().encode("quizzlo:"+v));
+    return [...new Uint8Array(h)].map(x=>x.toString(16).padStart(2,"0")).join("")===PIN_HASH}catch(e){return false}
+}
+document.querySelectorAll("#rolePick [data-role]").forEach(b=>b.addEventListener("click",()=>{
+  if(b.dataset.role==="teacher"){$("#pinForm").hidden=false;$("#pinIn").value="";$("#pinIn").focus();return}
+  $("#pinForm").hidden=true;setRole("student");
+}));
+$("#pinCancel").addEventListener("click",()=>{$("#pinForm").hidden=true});
+$("#pinForm").addEventListener("submit",async e=>{e.preventDefault();
+  if(await pinOk($("#pinIn").value.trim())){$("#pinForm").hidden=true;setRole("teacher")}
+  else{$("#pinIn").value="";toast("Wrong PIN")}
+});
 $("#roleBtn").addEventListener("click",()=>setRole(null));
 if(role==="teacher") tab="teachers";
 
